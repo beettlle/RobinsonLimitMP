@@ -1,0 +1,64 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies (if any)
+      run: |
+        # Add any build steps here if needed
+        echo "No dependencies to install for static site"
+        
+    - name: Inject API Key
+      run: |
+        # Create a temporary config file with the API key
+        cat > config.prod.js << EOF
+        // Production configuration with injected API keys
+        const config = {
+            openWeatherMapApiKey: '${{ secrets.OPENWEATHER_API_KEY }}',
+            weatherApiKey: '${{ secrets.WEATHERAPI_KEY }}',
+            weatherSettings: {
+                primaryApi: 'openweathermap',
+                fallbackApis: ['wttr', 'weatherapi'],
+                timeout: 10000,
+                retryAttempts: 2
+            }
+        };
+        
+        // Make it available globally
+        if (typeof window !== 'undefined') {
+            window.config = config;
+        }
+        
+        // Export for Node.js
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = config;
+        }
+        EOF
+        
+    - name: Update HTML to use production config
+      run: |
+        # Replace the config.js reference with config.prod.js
+        sed -i 's/config\.js/config.prod.js/g' index.html
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: . 

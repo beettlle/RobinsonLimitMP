@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R22 Standard Validation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-case { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background-color: #d4edda; border-color: #c3e6cb; }
+        .fail { background-color: #f8d7da; border-color: #f5c6cb; }
+        .result { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>R22 Standard Manifold Pressure Validation</h1>
+    <div id="results"></div>
+
+    <script>
+        // Copy the calculation function from app.js
+        function calculateR22StandardManifoldPressure(pressureAltitudeFeet, temperatureCelsius) {
+            // Convert pressure altitude to thousands of feet for the equations
+            const PA = pressureAltitudeFeet / 1000;
+            
+            // Calculate the slope m(T) based on temperature
+            let m;
+            if (temperatureCelsius >= 20) {
+                m = -0.20;
+            } else if (temperatureCelsius >= 0) {
+                m = -0.0025 * temperatureCelsius - 0.15;
+            } else {
+                m = -0.15;
+            }
+            
+            // Calculate the y-intercept c(T) based on temperature
+            let c;
+            if (temperatureCelsius >= 20) {
+                c = 0.015 * temperatureCelsius + 25.1;
+            } else {
+                c = 0.0275 * temperatureCelsius + 24.55;
+            }
+            
+            // Calculate the temperature-dependent limit
+            const MAP_temp = m * PA + c;
+            
+            // Calculate the full throttle limit
+            const MAP_throttle = -0.75 * PA + 27.25;
+            
+            // The actual limit is the lesser of the two values
+            const finalMAP = Math.min(MAP_temp, MAP_throttle);
+            
+            // Check if the result is valid (positive and reasonable)
+            if (finalMAP <= 0 || finalMAP > 30) {
+                return "FT";
+            }
+            
+            return parseFloat(finalMAP.toFixed(2));
+        }
+
+        // Test cases
+        const testCases = [
+            { altitude: 0, temp: -20, expected: 24.0, description: "Sea level, -20°C" },
+            { altitude: 0, temp: 0, expected: 24.55, description: "Sea level, 0°C" },
+            { altitude: 0, temp: 20, expected: 25.3, description: "Sea level, 20°C" },
+            { altitude: 0, temp: 40, expected: 25.8, description: "Sea level, 40°C" },
+            { altitude: 1000, temp: -20, expected: 23.8, description: "1000ft, -20°C" },
+            { altitude: 1000, temp: 0, expected: 24.45, description: "1000ft, 0°C" },
+            { altitude: 1000, temp: 20, expected: 25.1, description: "1000ft, 20°C" },
+            { altitude: 1000, temp: 40, expected: 25.6, description: "1000ft, 40°C" },
+            { altitude: 2000, temp: -20, expected: 23.6, description: "2000ft, -20°C" },
+            { altitude: 2000, temp: 0, expected: 24.3, description: "2000ft, 0°C" },
+            { altitude: 2000, temp: 20, expected: 24.9, description: "2000ft, 20°C" },
+            { altitude: 2000, temp: 40, expected: 25.5, description: "2000ft, 40°C" }
+        ];
+
+        const resultsDiv = document.getElementById('results');
+        let passCount = 0;
+        let totalCount = testCases.length;
+
+        testCases.forEach(test => {
+            const calculated = calculateR22StandardManifoldPressure(test.altitude, test.temp);
+            const difference = Math.abs(calculated - test.expected);
+            const isPass = difference < 0.15; // Allow 0.15 tolerance
+            
+            if (isPass) passCount++;
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-case ${isPass ? 'pass' : 'fail'}`;
+            testDiv.innerHTML = `
+                <div class="result">${isPass ? '✓ PASS' : '✗ FAIL'}: ${test.description}</div>
+                <div>Altitude: ${test.altitude}ft, Temperature: ${test.temp}°C</div>
+                <div>Expected: ${test.expected}, Calculated: ${calculated}</div>
+                <div>Difference: ${difference.toFixed(3)}</div>
+            `;
+            resultsDiv.appendChild(testDiv);
+        });
+
+        // Summary
+        const summaryDiv = document.createElement('div');
+        summaryDiv.style.cssText = 'margin-top: 20px; padding: 15px; background-color: #e2e3e5; border: 1px solid #d6d8db; border-radius: 4px;';
+        summaryDiv.innerHTML = `
+            <h3>Summary</h3>
+            <p>Tests Passed: ${passCount}/${totalCount} (${Math.round(passCount/totalCount*100)}%)</p>
+            <p>${passCount === totalCount ? '✅ All tests passed! Implementation is working correctly.' : '⚠️ Some tests failed. Check the calculations.'}</p>
+        `;
+        resultsDiv.appendChild(summaryDiv);
+    </script>
+</body>
+</html> 

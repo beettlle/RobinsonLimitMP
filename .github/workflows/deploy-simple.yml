@@ -1,0 +1,30 @@
+name: Deploy to GitHub Pages (Simple)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Inject API Keys into config.js
+      run: |
+        # Replace placeholders with actual API keys
+        sed -i "s/your_openweathermap_api_key_here/${{ secrets.OPENWEATHER_API_KEY }}/g" config.js
+        sed -i "s/your_weatherapi_key_here/${{ secrets.WEATHERAPI_KEY }}/g" config.js
+        
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: . 
