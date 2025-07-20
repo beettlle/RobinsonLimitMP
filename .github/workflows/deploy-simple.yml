@@ -19,9 +19,20 @@ jobs:
         
     - name: Inject API Keys into config.js
       run: |
-        # Replace placeholders with actual API keys
-        sed -i "s/your_openweathermap_api_key_here/${{ secrets.OPENWEATHER_API_KEY }}/g" config.js
-        sed -i "s/your_weatherapi_key_here/${{ secrets.WEATHERAPI_KEY }}/g" config.js
+        # Check if secrets are available and inject them
+        if [ -n "${{ secrets.OPENWEATHER_API_KEY }}" ]; then
+          sed -i "s/your_openweathermap_api_key_here/${{ secrets.OPENWEATHER_API_KEY }}/g" config.js
+          echo "OpenWeatherMap API key injected"
+        else
+          echo "Warning: OPENWEATHER_API_KEY secret not found"
+        fi
+        
+        if [ -n "${{ secrets.WEATHERAPI_KEY }}" ]; then
+          sed -i "s/your_weatherapi_key_here/${{ secrets.WEATHERAPI_KEY }}/g" config.js
+          echo "WeatherAPI key injected"
+        else
+          echo "Warning: WEATHERAPI_KEY secret not found"
+        fi
         
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
