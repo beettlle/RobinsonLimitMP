@@ -24,8 +24,8 @@ jobs:
         VERSION_JS=$(grep "APP_VERSION = " version.js | sed "s/.*APP_VERSION = '\(.*\)';/\1/")
         echo "Version in version.js: $VERSION_JS"
         
-        # Extract version from service worker
-        SW_VERSION=$(grep "CACHE_NAME = " service-worker.js | sed "s/.*robinson-limit-mp-v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/")
+        # Extract version from service worker (first CACHE_NAME line)
+        SW_VERSION=$(grep "CACHE_NAME = " service-worker.js | head -1 | sed "s/.*robinson-limit-mp-v\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/")
         echo "Version in service-worker.js: $SW_VERSION"
         
         # Check if versions match

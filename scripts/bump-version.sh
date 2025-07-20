@@ -50,6 +50,10 @@ sed -i.bak "s/robinson-limit-mp-static-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp
 sed -i.bak "s/robinson-limit-mp-dynamic-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-dynamic-v$NEW_VERSION/g" service-worker.js
 rm service-worker.js.bak
 
+# Verify the updates
+echo "Updated cache names:"
+grep "CACHE_NAME" service-worker.js
+
 echo "✅ Version bumped to $NEW_VERSION"
 echo "Files updated: version.js, service-worker.js"
 echo ""
