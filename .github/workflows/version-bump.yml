@@ -1,0 +1,53 @@
+name: Auto Version Bump
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip version]')"
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Bump version
+      run: |
+        # Read current version
+        CURRENT_VERSION=$(grep "APP_VERSION = " version.js | sed "s/.*APP_VERSION = '\(.*\)';/\1/")
+        echo "Current version: $CURRENT_VERSION"
+        
+        # Parse version components
+        IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+        MAJOR=${VERSION_PARTS[0]}
+        MINOR=${VERSION_PARTS[1]}
+        PATCH=${VERSION_PARTS[2]}
+        
+        # Increment patch version
+        NEW_PATCH=$((PATCH + 1))
+        NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+        echo "New version: $NEW_VERSION"
+        
+        # Update version.js
+        sed -i "s/APP_VERSION = '.*'/APP_VERSION = '$NEW_VERSION'/" version.js
+        
+        # Update service worker cache names
+        sed -i "s/robinson-limit-mp-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-v$NEW_VERSION/g" service-worker.js
+        sed -i "s/robinson-limit-mp-static-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-static-v$NEW_VERSION/g" service-worker.js
+        sed -i "s/robinson-limit-mp-dynamic-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-dynamic-v$NEW_VERSION/g" service-worker.js
+        
+        # Commit and push changes
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add version.js service-worker.js
+        git commit -m "Auto-bump version to $NEW_VERSION [skip version]"
+        git push 

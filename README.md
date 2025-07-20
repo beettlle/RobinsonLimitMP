@@ -303,7 +303,50 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 4. Test thoroughly
 5. Submit a pull request
 
+## 🔄 Version Management
+
+### Automated Version Bumping
+The project uses automated version management through GitHub Actions:
+
+- **Auto Version Bump**: Automatically increments patch version on every push to main
+- **Version Consistency**: Ensures `version.js` and `service-worker.js` stay in sync
+- **Update Detection**: Clients automatically detect and prompt for updates
+- **Cache Management**: Service worker cache names include version numbers
+
+### Manual Version Management
+For manual version control, use the provided script:
+
+```bash
+# Bump patch version (default)
+./scripts/bump-version.sh
+
+# Bump minor version
+./scripts/bump-version.sh minor
+
+# Bump major version
+./scripts/bump-version.sh major
+```
+
+### Version Files
+- `version.js`: Contains the current app version
+- `service-worker.js`: Cache names include version numbers
+- `manifest.json`: PWA manifest (version independent)
+
+### Skip Version Bump
+To skip automatic version bumping, include `[skip version]` in your commit message:
+
+```bash
+git commit -m "Your commit message [skip version]"
+```
+
 ## 🔄 Version History
+
+- **v1.4.1**: Automated version management system
+  - Added GitHub Actions workflow for automatic version bumping
+  - Implemented version consistency validation in deployment
+  - Created manual version management script (`scripts/bump-version.sh`)
+  - Enhanced documentation for version management processes
+  - Ensures clients automatically detect and prompt for updates
 
 - **v1.4.0**: Enhanced development workflow
   - Added development server with environment variable support
