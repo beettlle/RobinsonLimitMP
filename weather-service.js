@@ -202,9 +202,8 @@ class WeatherService {
             throw new Error('OpenWeatherMap API key not configured');
         }
         
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`;
-        
-
+        // Use corsproxy.io to bypass CORS
+        const url = `https://corsproxy.io/?https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`;
         
         const response = await fetch(url);
         if (!response.ok) {
@@ -212,7 +211,6 @@ class WeatherService {
         }
 
         const data = await response.json();
-
         
         return {
             temperature: data.main.temp,
@@ -228,8 +226,8 @@ class WeatherService {
         if (!this.weatherApiKey || this.weatherApiKey === 'your_weatherapi_key_here') {
             throw new Error('WeatherAPI.com API key not configured');
         }
-        
-        const url = `https://api.weatherapi.com/v1/current.json?key=${this.weatherApiKey}&q=${latitude},${longitude}&aqi=no`;
+        // Use corsproxy.io to bypass CORS
+        const url = `https://corsproxy.io/?https://api.weatherapi.com/v1/current.json?key=${this.weatherApiKey}&q=${latitude},${longitude}&aqi=no`;
         
         const response = await fetch(url);
         if (!response.ok) {
