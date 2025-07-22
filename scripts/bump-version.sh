@@ -17,12 +17,12 @@ NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
 echo "New version: $NEW_VERSION"
 
 # Update version.js
-sed -i "s/APP_VERSION = '.*'/APP_VERSION = '$NEW_VERSION'/" version.js
+sed -i '' "s/APP_VERSION = '.*'/APP_VERSION = '$NEW_VERSION'/" version.js
 
 # Update service worker cache names
-sed -i "s/robinson-limit-mp-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-v$NEW_VERSION/g" service-worker.js
-sed -i "s/robinson-limit-mp-static-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-static-v$NEW_VERSION/g" service-worker.js
-sed -i "s/robinson-limit-mp-dynamic-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-dynamic-v$NEW_VERSION/g" service-worker.js
+sed -i '' "s/robinson-limit-mp-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-v$NEW_VERSION/g" service-worker.js
+sed -i '' "s/robinson-limit-mp-static-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-static-v$NEW_VERSION/g" service-worker.js
+sed -i '' "s/robinson-limit-mp-dynamic-v[0-9]*\.[0-9]*\.[0-9]*/robinson-limit-mp-dynamic-v$NEW_VERSION/g" service-worker.js
 
 echo "Updated cache names:"
 grep "CACHE_NAME" service-worker.js 

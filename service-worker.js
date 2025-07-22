@@ -1,6 +1,6 @@
-const CACHE_NAME = 'robinson-limit-mp-v1.4.2';
-const STATIC_CACHE_NAME = 'robinson-limit-mp-static-v1.4.2';
-const DYNAMIC_CACHE_NAME = 'robinson-limit-mp-dynamic-v1.4.2';
+const CACHE_NAME = 'robinson-limit-mp-v1.4.3';
+const STATIC_CACHE_NAME = 'robinson-limit-mp-static-v1.4.3';
+const DYNAMIC_CACHE_NAME = 'robinson-limit-mp-dynamic-v1.4.3';
 
 // Files to cache immediately (static assets)
 const STATIC_FILES = [

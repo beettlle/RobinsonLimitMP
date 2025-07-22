@@ -1,5 +1,5 @@
 // Version configuration for RobinsonLimitMP
-const APP_VERSION = '1.4.2';
+const APP_VERSION = '1.4.3';
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {

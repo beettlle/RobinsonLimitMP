@@ -128,13 +128,6 @@ class WeatherService {
     async getWeatherFromPosition(position) {
         const { latitude, longitude } = position.coords;
         
-        // Debug logging for troubleshooting
-        console.log('🌤️ Weather Service Debug:');
-        console.log('  - OpenWeatherMap API Key:', window.config?.openWeatherMapApiKey ? 'Present' : 'Missing');
-        console.log('  - WeatherAPI Key:', this.weatherApiKey ? 'Present' : 'Missing');
-        console.log('  - Config object:', window.config);
-        console.log('  - Environment:', window.config?.environment || 'unknown');
-        
         // Try multiple weather APIs in order of preference
         const apis = [
             () => this.getWeatherFromOpenWeatherMap(latitude, longitude),
@@ -142,17 +135,13 @@ class WeatherService {
             () => this.getWeatherFromWttrIn(latitude, longitude)
         ];
 
-        for (let i = 0; i < apis.length; i++) {
-            const apiName = ['OpenWeatherMap', 'WeatherAPI', 'wttr.in'][i];
+        for (const api of apis) {
             try {
-                console.log(`  🔄 Trying ${apiName}...`);
-                const weather = await apis[i]();
+                const weather = await api();
                 if (weather && weather.temperature !== null) {
-                    console.log(`  ✅ ${apiName} succeeded:`, weather);
                     return weather;
                 }
             } catch (error) {
-                console.log(`  ❌ ${apiName} failed:`, error.message);
                 continue;
             }
         }
