@@ -43,20 +43,50 @@ jobs:
         
     - name: Inject API Keys into config.js
       run: |
-        # Check if secrets are available and inject them
-        if [ -n "${{ secrets.OPENWEATHER_API_KEY }}" ]; then
-          sed -i "s/your_openweathermap_api_key_here/${{ secrets.OPENWEATHER_API_KEY }}/g" config.js
-          echo "OpenWeatherMap API key injected"
-        else
-          echo "Warning: OPENWEATHER_API_KEY secret not found"
-        fi
+        # Create a production config that includes the window.config object
+        cat > config.js << EOF
+        // Production config with injected API keys
+        window.config = {
+            openWeatherMapApiKey: '${{ secrets.OPENWEATHER_API_KEY }}',
+            weatherApiKey: '${{ secrets.WEATHERAPI_KEY }}',
+            environment: 'production'
+        };
         
-        if [ -n "${{ secrets.WEATHERAPI_KEY }}" ]; then
-          sed -i "s/your_weatherapi_key_here/${{ secrets.WEATHERAPI_KEY }}/g" config.js
-          echo "WeatherAPI key injected"
-        else
-          echo "Warning: WEATHERAPI_KEY secret not found"
-        fi
+        // Configuration file for API keys and settings
+        const config = {
+            // OpenWeatherMap API Key - load from window.config or fallback
+            openWeatherMapApiKey: (() => {
+                if (typeof window !== 'undefined' && window.config && window.config.openWeatherMapApiKey) {
+                    return window.config.openWeatherMapApiKey;
+                }
+                return 'your_openweathermap_api_key_here';
+            })(),
+            
+            // WeatherAPI.com API Key - load from window.config or fallback
+            weatherApiKey: (() => {
+                if (typeof window !== 'undefined' && window.config && window.config.weatherApiKey) {
+                    return window.config.weatherApiKey;
+                }
+                return 'your_weatherapi_key_here';
+            })(),
+            
+            // Weather API settings
+            weatherSettings: {
+                primaryApi: 'openweathermap',
+                fallbackApis: ['wttr', 'weatherapi'],
+                timeout: 10000,
+                retryAttempts: 2
+            }
+        };
+
+        // Export for use in other modules
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = config;
+        }
+        EOF
+        
+        echo "✅ API keys injected into config.js"
+        echo "✅ Production config generated with window.config object"
         
     - name: Setup Pages
       uses: actions/configure-pages@v4
