@@ -1,12 +1,12 @@
 # RobinsonLimitMP
 
-A Progressive Web App (PWA) for calculating manifold pressure settings for R22 helicopter variants based on altitude and temperature. This critical aviation safety tool provides real-time calculations and POH-accurate chart visualization.
+A Progressive Web App (PWA) for calculating manifold pressure settings for R22 helicopter variants and hover performance for AS350-B3 helicopter based on altitude, temperature, and weight. This critical aviation safety tool provides real-time calculations and POH-accurate chart visualization.
 
 ## 🚁 Features
 
 - **Real-time Calculation**: Instant manifold pressure calculation with interpolation
 - **POH-Accurate Charts**: Visual representation matching Pilot Operating Handbook charts
-- **Multiple Models**: Support for 7 Robinson helicopter variants:
+- **Multiple Models**: Support for 8 helicopter variants:
   - R22 Standard / R22 (0-6000ft, 4 temp lines)
   - R22 HP / R22 Alpha (0-8000ft, 4 temp lines)
   - R22 Beta (0-8000ft, 4 temp lines) - 5-minute takeoff rating
@@ -14,6 +14,7 @@ A Progressive Web App (PWA) for calculating manifold pressure settings for R22 h
   - R44 (0-6000ft, 8 temp lines) - Maximum Continuous Power (Max Takeoff: +1.6 IN.)
   - R44 II (0-12000ft, 8 temp lines) - Maximum Continuous Power (Max Takeoff: +2.8 IN.)
   - R44 Cadet (0-12000ft, 8 temp lines) - Maximum Continuous Power (Max Takeoff: +2.8 IN.)
+  - **AS350-B3** (1200-2250kg, -40 to +40°C) - IGE Hover Ceiling Performance
 - **Weather Integration**: Automatic temperature retrieval when location permission is granted
 - **Automatic Altitude Detection**: 
   - **Priority 1**: Finds nearby airfields using location services (most accurate)
@@ -39,6 +40,15 @@ A Progressive Web App (PWA) for calculating manifold pressure settings for R22 h
 
 ### Data Structure
 The app uses a hybrid approach for manifold pressure calculations:
+
+**AS350-B3 IGE Hover Performance Model**:
+- **Performance Type**: In-Ground Effect (IGE) Hover Ceiling calculation
+- **Input Parameters**: Weight (kg) and Outside Air Temperature (°C)
+- **Output**: Maximum hover ceiling in feet
+- **Data Source**: Performance chart with known data points and bilinear interpolation
+- **Flight Envelope**: Temperature-dependent weight limits (e.g., 20°C starts at 1650kg, 30°C starts at 1800kg)
+- **Chart Visualization**: Weight vs. Hover Ceiling with temperature lines
+- **Validation**: Returns error codes for invalid inputs or envelope violations
 
 **Mathematical Equation Models**: The following models use mathematical equations instead of table interpolation for precise calculations:
 
@@ -114,22 +124,26 @@ const airports = [
 - **Offline Ready**: All data cached locally for offline use
 
 ### Calculation Engine
+- **AS350-B3**: IGE hover ceiling calculation using lookup table with bilinear interpolation and flight envelope validation
 - **R22 Standard, HP/Alpha, and Beta**: Mathematical equation-based calculations for precise results
 - **R22 Beta II, R44, R44 II, and R44 Cadet**: Real-time bilinear interpolation between data points
 - Full throttle line handling with temperature-dependent limits
 - Error validation and boundary checking
-- Support for all temperature ranges (-20°C to +40°C)
+- Support for all temperature ranges (-20°C to +40°C for R22/R44, -40°C to +40°C for AS350-B3)
 - Automatic fallback to "FT" (Full Throttle) when limits are exceeded
 - Special handling for R22 Beta MCP calculations (chart value - 1 inch)
+- Flight envelope validation for AS350-B3 with temperature-dependent weight limits
 
 ### Chart Visualization
 - Chart.js integration for POH-accurate charts
+- **AS350-B3**: Weight vs. Hover Ceiling chart with temperature lines (-40°C to +40°C), flight envelope boundaries, and real-time point plotting
 - **R22 Standard, HP/Alpha, and Beta**: Smooth mathematical curves (100ft resolution)
 - **R22 Beta II, R44, R44 II, and R44 Cadet**: Discrete data point interpolation
 - Real-time point plotting with calculated values
 - Temperature line visualization
 - Full throttle line representation
 - Special point display for R22 Beta MCP values
+- Flight envelope visualization for AS350-B3 showing temperature-dependent weight limits
 
 ### Update Checking System
 - Automatic version comparison on app startup
@@ -161,9 +175,15 @@ The app uses multiple weather APIs for reliable temperature data. To keep your A
 ### Web App
 1. Visit the live site: [https://username.github.io/RobinsonLimitMP](https://username.github.io/RobinsonLimitMP)
 2. Select helicopter type
-3. Enter outside air temperature (°C) or use the weather button
-4. Enter altitude (feet)
-5. View calculated manifold pressure and chart
+3. **For R22/R44 helicopters**:
+   - Enter outside air temperature (°C) or use the weather button
+   - Enter altitude (feet)
+   - View calculated manifold pressure and chart
+4. **For AS350-B3 helicopter**:
+   - Enter weight (kg) between 1200-2250
+   - Enter outside air temperature (°C) between -40 to +40
+   - View calculated IGE hover ceiling and performance chart
+5. View calculated results and interactive charts
 
 ### iOS Home Screen Installation
 1. Open Safari on iOS device
@@ -340,6 +360,14 @@ git commit -m "Your commit message [skip version]"
 ```
 
 ## 🔄 Version History
+
+- **v1.5.0**: AS350-B3 Helicopter Support
+  - Added AS350-B3 IGE Hover Ceiling performance calculations
+  - Implemented weight vs. hover ceiling chart visualization
+  - Added flight envelope validation with temperature-dependent weight limits
+  - Enhanced UI to support both manifold pressure and hover performance calculations
+  - Added real-time point plotting for AS350-B3 performance chart
+  - Updated documentation and technical specifications
 
 - **v1.4.1**: Automated version management system
   - Added GitHub Actions workflow for automatic version bumping
