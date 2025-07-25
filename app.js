@@ -129,6 +129,8 @@ class RobinsonLimitMP {
         this.initializeWeather();
         this.initializeLocation();
         this.checkForUpdates();
+        this.calculateHp();
+        this.togglePerformanceInputs();
     }
 
     initializeElements() {
@@ -142,7 +144,10 @@ class RobinsonLimitMP {
             errorMessage: document.getElementById('error-message'),
             weatherBtn: document.getElementById('get-weather-btn'),
             localTempBtn: document.getElementById('get-local-temp-btn'),
-            weatherStatus: document.getElementById('weather-status')
+            weatherStatus: document.getElementById('weather-status'),
+            weightInput: document.getElementById('weight'),
+            oatInput: document.getElementById('oat'),
+            hpResult: document.getElementById('hp-result')
         };
     }
 
@@ -152,6 +157,7 @@ class RobinsonLimitMP {
             this.saveHelicopterSelection();
             this.initializeChart();
             this.calculate();
+            this.togglePerformanceInputs();
         });
         this.elements.temperatureInput.addEventListener('input', () => this.calculate());
         this.elements.altitudeInput.addEventListener('input', () => {
@@ -163,6 +169,9 @@ class RobinsonLimitMP {
             this.calculate();
         });
 
+        this.elements.weightInput.addEventListener('input', () => this.calculateHp());
+        this.elements.oatInput.addEventListener('input', () => this.calculateHp());
+
         // Weather button event listener
         this.elements.weatherBtn.addEventListener('click', () => this.handleWeatherRequest());
 
@@ -173,12 +182,32 @@ class RobinsonLimitMP {
         this.debounceCalculate = this.debounce(() => this.calculate(), 300);
     }
 
+    togglePerformanceInputs() {
+        const selectedHelicopter = this.elements.helicopterSelect.value;
+        const performanceInputs = [
+            this.elements.weightInput.parentElement,
+            this.elements.oatInput.parentElement,
+            this.elements.hpResult
+        ];
+        const manifoldPressureInputs = [
+            this.elements.temperatureInput.parentElement.parentElement,
+            this.elements.altitudeInput.parentElement,
+            this.elements.calculatedPressure
+        ];
+
+        if (selectedHelicopter === 'as350') {
+            performanceInputs.forEach(el => el.style.display = 'block');
+            manifoldPressureInputs.forEach(el => el.style.display = 'none');
+        } else {
+            performanceInputs.forEach(el => el.style.display = 'none');
+            manifoldPressureInputs.forEach(el => el.style.display = 'block');
+        }
+    }
+
     calculate() {
         const helicopter = this.elements.helicopterSelect.value;
         const temperature = parseFloat(this.elements.temperatureInput.value);
         const altitude = parseFloat(this.elements.altitudeInput.value);
-
-
 
         // Validate inputs
         if (!this.validateInputs(helicopter, temperature, altitude)) {
@@ -198,6 +227,37 @@ class RobinsonLimitMP {
         }
     }
 
+    calculateHp() {
+      const weight = parseInt(this.elements.weightInput.value, 10);
+      const oat = parseInt(this.elements.oatInput.value, 10);
+  
+      if (isNaN(weight) || isNaN(oat)) {
+        this.elements.hpResult.textContent = '';
+        return;
+      }
+  
+      const hp = getHp(weight, oat);
+      
+      if (hp === -1) {
+        this.elements.hpResult.textContent = 'Invalid input - Check weight (1200-2250kg) and temperature (-40 to 40°C)';
+        this.elements.hpResult.style.color = '#ff3b30';
+      } else if (hp === -2) {
+        this.elements.hpResult.textContent = 'Cannot hover - Weight/temperature combination outside flight envelope';
+        this.elements.hpResult.style.color = '#ff9500';
+      } else if (hp === 0) {
+        this.elements.hpResult.textContent = 'No data available for this combination';
+        this.elements.hpResult.style.color = '#ff3b30';
+      } else {
+        this.elements.hpResult.textContent = `IGE Hover Ceiling: ${hp.toFixed(1)} ft`;
+        this.elements.hpResult.style.color = '#34c759';
+        
+        // Update chart point for AS350
+        if (this.elements.helicopterSelect.value === 'as350' && this.currentChart) {
+          this.updateChartPoint(0, 0, 0); // Dummy values, actual values are handled in updateChartPoint
+        }
+      }
+    }
+
     convertHelicopterType(helicopterType) {
         const typeMap = {
             'r22_standard': 'STANDARD',
@@ -206,7 +266,8 @@ class RobinsonLimitMP {
             'r22_beta_ii': 'BETA_II',
             'r44': 'R44',
             'r44_ii': 'R44_II',
-            'r44_cadet': 'R44_CADET'
+            'r44_cadet': 'R44_CADET',
+            'as350': 'AS350-B3'
         };
         return typeMap[helicopterType] || helicopterType;
     }
@@ -298,6 +359,11 @@ class RobinsonLimitMP {
     }
 
     generateChartData(modelType) {
+        // Special handling for AS350-B3 using performance data
+        if (modelType === "AS350-B3") {
+            return this.generateAS350ChartData();
+        }
+        
         // Special handling for R22 Standard using mathematical equations
         if (modelType === "STANDARD") {
             return this.generateR22StandardChartData();
@@ -352,6 +418,54 @@ class RobinsonLimitMP {
             datasets: datasets,
             altitudes: data.pressureAltitudesFeet,
             temperatures: data.oatCelsius
+        };
+    }
+
+    generateAS350ChartData() {
+        // Generate chart data for AS350 using performance data
+        const temperatures = [-40, -30, -20, -10, 0, 10, 20, 30, 40];
+        const weights = [];
+        
+        // Generate weight points from 1200 to 2250 kg in 50-kg increments
+        for (let weight = 1200; weight <= 2250; weight += 50) {
+            weights.push(weight);
+        }
+        
+        const datasets = [];
+        const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FF2D92', '#FF6B35', '#4ECDC4'];
+
+        temperatures.forEach((temp, tempIndex) => {
+            const points = [];
+            
+            weights.forEach(weight => {
+                const hp = getHp(weight, temp);
+                if (hp > 0) { // Only include valid hover ceiling values
+                    points.push({
+                        x: weight,
+                        y: hp
+                    });
+                }
+            });
+
+            if (points.length > 0) {
+                datasets.push({
+                    label: `${temp}°C`,
+                    data: points,
+                    borderColor: colors[tempIndex % colors.length],
+                    backgroundColor: colors[tempIndex % colors.length],
+                    borderWidth: 2,
+                    pointRadius: 0, // No points for smooth lines
+                    pointHoverRadius: 6,
+                    fill: false,
+                    tension: 0.1
+                });
+            }
+        });
+
+        return {
+            datasets: datasets,
+            weights: weights,
+            temperatures: temperatures
         };
     }
 
@@ -528,8 +642,26 @@ class RobinsonLimitMP {
         const yMin = Math.floor((minY - padding) * 10) / 10; // Round down to nearest 0.1
         const yMax = Math.ceil((maxY + padding) * 10) / 10; // Round up to nearest 0.1
         
-        // Set X-axis range: 0 to largest number plus 200
-        const xMax = Math.max(...chartData.altitudes) + 200;
+        // Set X-axis range based on model type
+        let xMax, xAxisTitle, yAxisTitle, chartTitle, yMinFixed, yMaxFixed;
+        
+        if (modelType === "AS350-B3") {
+            // AS350 uses weight on X-axis
+            xMax = 2250; // Set exact maximum
+            xAxisTitle = 'Weight (kg)';
+            yAxisTitle = 'IGE Hover Ceiling (ft)';
+            chartTitle = 'AS350-B3 - IGE Hovering Flight Performance';
+            yMinFixed = 0; // Set exact minimum
+            yMaxFixed = 23; // Set exact maximum
+        } else {
+            // Other helicopters use altitude on X-axis
+            xMax = Math.max(...chartData.altitudes) + 200;
+            xAxisTitle = 'Pressure Altitude (feet)';
+            yAxisTitle = 'Manifold Pressure (in. Hg)';
+            chartTitle = `R22 ${modelType} - Limit Manifold Pressure Chart`;
+            yMinFixed = yMin;
+            yMaxFixed = yMax;
+        }
         
         this.currentChart = new Chart(ctx, {
             type: 'line',
@@ -542,7 +674,7 @@ class RobinsonLimitMP {
                 plugins: {
                     title: {
                         display: true,
-                        text: `R22 ${modelType} - Limit Manifold Pressure Chart`,
+                        text: chartTitle,
                         font: {
                             size: 16,
                             weight: 'bold'
@@ -562,18 +694,18 @@ class RobinsonLimitMP {
                         position: 'bottom',
                         title: {
                             display: true,
-                            text: 'Pressure Altitude (feet)'
+                            text: xAxisTitle
                         },
-                        min: 0,
+                        min: modelType === "AS350-B3" ? 1200 : 0,
                         max: xMax
                     },
                     y: {
                         title: {
                             display: true,
-                            text: 'Manifold Pressure (in. Hg)'
+                            text: yAxisTitle
                         },
-                        min: yMin,
-                        max: yMax
+                        min: yMinFixed,
+                        max: yMaxFixed
                     }
                 },
                 interaction: {
@@ -601,8 +733,8 @@ class RobinsonLimitMP {
         this.currentChart.data.datasets.push({
             label: 'Calculated Point',
             data: [{
-                x: altitude,
-                y: pressure
+                x: helicopter === 'as350' ? this.elements.weightInput.value : altitude,
+                y: helicopter === 'as350' ? getHp(parseInt(this.elements.weightInput.value), parseInt(this.elements.oatInput.value)) : pressure
             }],
             borderColor: '#FF0000',
             backgroundColor: '#FF0000',
