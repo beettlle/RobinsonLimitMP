@@ -40,6 +40,7 @@
                     <option value="r44">R44</option>
                     <option value="r44_ii">R44 II</option>
                     <option value="r44_cadet">R44 Cadet</option>
+                    <option value="as350">AS350-B3</option>
                 </select>
             </div>
             
@@ -67,6 +68,14 @@
                 <label for="altitude">Altitude</label>
                 <input type="number" id="altitude" class="input-field" placeholder="feet" min="0" max="12000" step="100">
             </div>
+            <div class="input-group">
+                <label for="weight">Weight (kg)</label>
+                <input type="number" id="weight" class="input-field" placeholder="kg" min="1200" max="2250" step="10">
+            </div>
+            <div class="input-group">
+                <label for="oat">OAT (°C)</label>
+                <input type="number" id="oat" class="input-field" placeholder="°C" min="-40" max="40" step="1">
+            </div>
         </div>
 
         <!-- Calculated Output Section -->
@@ -74,6 +83,7 @@
             <div id="calculated-pressure" class="calculated-pressure">
                 Calculated manifold pressure
             </div>
+            <div id="hp-result" class="calculated-pressure"></div>
         </div>
 
         <!-- Chart Display Section -->
@@ -105,6 +115,7 @@
     <script src="version.js"></script>
     <script src="local-sensor-service.js"></script>
     <script src="weather-service.js?v=1.4.0"></script>
+    <script src="performance-model.js"></script>
     <script src="location-service.js"></script>
     <script src="app.js"></script>
     
