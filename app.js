@@ -190,7 +190,6 @@ class RobinsonLimitMP {
             this.elements.hpResult
         ];
         const manifoldPressureInputs = [
-            this.elements.temperatureInput.parentElement.parentElement,
             this.elements.altitudeInput.parentElement,
             this.elements.calculatedPressure
         ];
@@ -198,9 +197,12 @@ class RobinsonLimitMP {
         if (selectedHelicopter === 'as350') {
             performanceInputs.forEach(el => el.style.display = 'block');
             manifoldPressureInputs.forEach(el => el.style.display = 'none');
+            // Keep temperature input visible for weather integration
+            this.elements.temperatureInput.parentElement.parentElement.style.display = 'block';
         } else {
             performanceInputs.forEach(el => el.style.display = 'none');
             manifoldPressureInputs.forEach(el => el.style.display = 'block');
+            this.elements.temperatureInput.parentElement.parentElement.style.display = 'block';
         }
     }
 
@@ -1002,12 +1004,17 @@ class RobinsonLimitMP {
             // Update temperature input
             this.elements.temperatureInput.value = weather.temperature.toFixed(1);
             
+            // Update OAT input for AS350-B3
+            if (this.elements.helicopterSelect.value === 'as350') {
+                this.elements.oatInput.value = weather.temperature.toFixed(1);
+                this.calculateHp(); // Trigger AS350 calculation
+            } else {
+                this.calculate(); // Trigger manifold pressure calculation
+            }
+            
             // Show success status
             const statusText = `${weather.temperature.toFixed(1)}°C - ${weather.description} (${weather.source})`;
             this.showWeatherStatus(statusText, 'success');
-            
-            // Trigger calculation with new temperature
-            this.calculate();
             
         } catch (error) {
             this.showWeatherStatus(error.message, 'error');
@@ -1039,12 +1046,17 @@ class RobinsonLimitMP {
             // Update temperature input
             this.elements.temperatureInput.value = localWeather.temperature.toFixed(1);
             
+            // Update OAT input for AS350-B3
+            if (this.elements.helicopterSelect.value === 'as350') {
+                this.elements.oatInput.value = localWeather.temperature.toFixed(1);
+                this.calculateHp(); // Trigger AS350 calculation
+            } else {
+                this.calculate(); // Trigger manifold pressure calculation
+            }
+            
             // Show success status
             const statusText = `${localWeather.temperature.toFixed(1)}°C - Local sensors (${localWeather.accuracy})`;
             this.showWeatherStatus(statusText, 'success');
-            
-            // Trigger calculation with new temperature
-            this.calculate();
             
         } catch (error) {
             this.showWeatherStatus(error.message, 'error');
@@ -1055,7 +1067,15 @@ class RobinsonLimitMP {
 
     async autoFetchWeather() {
         // Only auto-fetch if weather is available and temperature field is empty
-        if (!this.weatherService.isWeatherAvailable() || this.elements.temperatureInput.value) {
+        if (!this.weatherService.isWeatherAvailable()) {
+            return;
+        }
+
+        // Check if temperature field is empty (for R22/R44) or OAT field is empty (for AS350-B3)
+        const isTemperatureEmpty = !this.elements.temperatureInput.value;
+        const isOatEmpty = this.elements.helicopterSelect.value === 'as350' && !this.elements.oatInput.value;
+        
+        if (!isTemperatureEmpty && !isOatEmpty) {
             return;
         }
 
@@ -1068,6 +1088,14 @@ class RobinsonLimitMP {
             // Update temperature input
             this.elements.temperatureInput.value = weather.temperature.toFixed(1);
             
+            // Update OAT input for AS350-B3
+            if (this.elements.helicopterSelect.value === 'as350') {
+                this.elements.oatInput.value = weather.temperature.toFixed(1);
+                this.calculateHp(); // Trigger AS350 calculation
+            } else {
+                this.calculate(); // Trigger manifold pressure calculation
+            }
+            
             // Show success status briefly, then clear
             const statusText = `${weather.temperature.toFixed(1)}°C - ${weather.description} (${weather.source})`;
             this.showWeatherStatus(statusText, 'success');
@@ -1076,9 +1104,6 @@ class RobinsonLimitMP {
             setTimeout(() => {
                 this.showWeatherStatus('', 'info');
             }, 3000);
-            
-            // Trigger calculation with new temperature
-            this.calculate();
             
         } catch (error) {
             // Auto weather fetch failed silently
